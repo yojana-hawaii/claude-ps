@@ -2,6 +2,8 @@
 
 **Programming Language**: Powershell
 
+**AI**: Claude
+
 **Goal 1**: Get Active Directory Users, Computers, Groups and Group Members. Insert into SQLs. 
 
 **Goal 2**: Use Claude 
