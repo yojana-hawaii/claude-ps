@@ -1,17 +1,25 @@
-# Active Directory Users and Computers
+# Active Directory Users and Computers**
 
-Programming Language: Powershell
+Programming Language**: Powershell
 
-Goal 1: Get Active Directory Users, Computers, Groups and Group Members. Insert into SQLs. 
+**Goal 1**: Get Active Directory Users, Computers, Groups and Group Members. Insert into SQLs. 
 
-Goal 2: Use Claude 
+**Goal 2**: Use Claude 
 
-Expectation: Maintainable, Testable, Extensible, Production ready, Optimized, enterprise logging pattern, CI/CD Integration
+**Expectation**: Maintainable, Testable, Extensible, Production ready, Optimized, enterprise logging pattern, CI/CD Integration
 
 
-Programming Principles : https://www.geeksforgeeks.org/blogs/7-common-programming-principles-that-every-developer-must-follow/ 
+**Programming Principles** : https://www.geeksforgeeks.org/blogs/7-common-programming-principles-that-every-developer-must-follow/ 
+* SOLID
+* YAGNI (You Aint Gonna Need It)
+* KISS (Keep It Simple Stupid)
+* DRY (Don't Repeat Youself)
+* SOC (Separation Of Concerns)
+* Avoid Premature Optimization
+* Law of Demeter
 
-Programming Style: https://martinfowler.com/bliki/TestDrivenDevelopment.html
+
+**Test Driven Development**: https://martinfowler.com/bliki/TestDrivenDevelopment.html
 
 ---
 
