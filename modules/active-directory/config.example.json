@@ -1,0 +1,7 @@
+{
+  "SqlServer": "sqlserver01.domain.local",
+  "Database": "ActiveDirectory",
+  "CommandTimeoutSeconds": 60,
+  "DeltaChangeHours": 48,
+  "UseTVP": true
+}

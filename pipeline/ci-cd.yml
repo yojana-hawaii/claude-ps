@@ -1,0 +1,138 @@
+name: AD-Sync CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Nightly regression run
+    - cron: '0 2 * * *'
+
+env:
+  PESTER_VERSION: '5.5.0'
+  PSSCRIPTANALYZER_VERSION: '1.22.0'
+
+jobs:
+
+  # ── 1. Lint ─────────────────────────────────────────────────────────────────
+  lint:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module PSScriptAnalyzer -RequiredVersion $env:PSSCRIPTANALYZER_VERSION -Force -Scope CurrentUser
+
+      - name: Run Analyzer
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path .\src -Recurse -Severity Error,Warning
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Error "PSScriptAnalyzer found $($results.Count) issue(s)."
+            exit 1
+          }
+          Write-Host "PSScriptAnalyzer: clean ✓"
+
+  # ── 2. Unit Tests ────────────────────────────────────────────────────────────
+  test:
+    name: Pester Unit Tests
+    runs-on: windows-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Force -Scope CurrentUser
+
+      - name: Run Tests
+        shell: pwsh
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path            = '.\tests'
+          $config.Output.Verbosity    = 'Detailed'
+          $config.TestResult.Enabled  = $true
+          $config.TestResult.OutputPath = 'TestResults.xml'
+          $config.CodeCoverage.Enabled = $true
+          $config.CodeCoverage.Path    = '.\src'
+          $config.CodeCoverage.OutputPath = 'Coverage.xml'
+
+          $result = Invoke-Pester -Configuration $config
+          if ($result.FailedCount -gt 0) {
+            Write-Error "$($result.FailedCount) test(s) failed."
+            exit 1
+          }
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            TestResults.xml
+            Coverage.xml
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Pester Tests
+          path: TestResults.xml
+          reporter: java-junit
+
+  # ── 3. Integration Tests (self-hosted runner with domain access) ─────────────
+  integration:
+    name: Integration Tests
+    runs-on: [ self-hosted, windows, ad-domain ]
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    environment: integration
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Force -Scope CurrentUser
+
+      - name: Run Integration Tests
+        shell: pwsh
+        env:
+          ADSYNC_SQL_SERVER: ${{ secrets.INT_SQL_SERVER }}
+          ADSYNC_DATABASE:   ${{ secrets.INT_DATABASE }}
+          ADSYNC_DELTA_HOURS: '1'
+        run: |
+          Invoke-Pester -Path .\tests\Integration -Output Detailed
+
+  # ── 4. Deploy ─────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production Share
+    runs-on: [ self-hosted, windows, ad-domain ]
+    needs: integration
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy module to network share
+        shell: pwsh
+        run: |
+          $dest = '${{ vars.DEPLOY_PATH }}\ADSync'
+          if (-not (Test-Path $dest)) { New-Item $dest -ItemType Directory | Out-Null }
+          Copy-Item -Path .\src\* -Destination $dest -Recurse -Force
+          Write-Host "Deployed to $dest"
+
+      - name: Register scheduled task
+        shell: pwsh
+        run: |
+          $action  = New-ScheduledTaskAction -Execute 'pwsh.exe' `
+                       -Argument '-NonInteractive -File "${{ vars.DEPLOY_PATH }}\ADSync\Run-ADSync.ps1"'
+          $trigger = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Hours 1) `
+                       -Once -At (Get-Date)
+          $settings= New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+          Register-ScheduledTask -TaskName 'ADSync-Hourly' -Action $action `
+                                  -Trigger $trigger -Settings $settings -Force
+          Write-Host "Scheduled task registered ✓"
