@@ -1,6 +1,6 @@
 # Active Directory Users and Computers**
 
-Programming Language**: Powershell
+**Programming Language**: Powershell
 
 **Goal 1**: Get Active Directory Users, Computers, Groups and Group Members. Insert into SQLs. 
 
