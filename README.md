@@ -15,7 +15,7 @@ Programming Style: https://martinfowler.com/bliki/TestDrivenDevelopment.html
 ## Repository Layout
 
 ```
-repo-root/
+claude-ps/
 │
 ├── shared/                              # ← consumed by ALL modules
 │   └── Infrastructure/
@@ -43,7 +43,7 @@ repo-root/
 │   │   ├── config.example.json
 │   │   └── Run-ADSync.ps1               # Scheduled-task entry point
 │   │
-│   ├── <next-module>/                   # e.g. azure-ad, servicenow, hr-feed …
+│   ├── <module2>/                       # e.g. azure-ad, servicenow, hr-feed …
 │   │   ├── src/
 │   │   │   ├── <Module>.psd1
 │   │   │   ├── <Module>.psm1            # imports from shared/Infrastructure/
