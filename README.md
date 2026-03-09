@@ -3,8 +3,11 @@
 Programming Language: Powershell
 
 Goal 1: Get Active Directory Users, Computers, Groups and Group Members. Insert into SQLs. 
+
 Goal 2: Use Claude 
+
 Expectation: Maintainable, Testable, Extensible, Production ready, Optimized, enterprise logging pattern, CI/CD Integration
+
 
 Programming Principles : https://www.geeksforgeeks.org/blogs/7-common-programming-principles-that-every-developer-must-follow/ 
 
